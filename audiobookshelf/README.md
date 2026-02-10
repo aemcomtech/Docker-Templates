@@ -1,13 +1,11 @@
 # Audiobookshelf Docker Deployment
 
-# ==============================================================================
 # AUTHOR:  aemcomtech.au
 # VERSION: 1.2026.02.10.170845
 # WEBSITE: aemcomtech.au
 # PURPOSE: Secure a Docker-centric homelab repository by excluding sensitive 
 #          environment variables, local database binaries, and platform-specific 
 #          build artifacts.
-# ==============================================================================
 
 ## 🎩 MadHatter Summary:
 * **The Sentry (White Hat):** Guards the gates by ensuring secrets like Authentik tokens and Cloudflare keys never leave the local environment.
