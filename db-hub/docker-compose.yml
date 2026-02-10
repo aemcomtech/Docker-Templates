@@ -1,0 +1,119 @@
+services:
+  postgres-hub:
+    image: postgres:16-alpine
+    container_name: postgres-hub
+    hostname: postgres-hub
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_SUPER_PASS}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: ${TZ}
+    volumes:
+      # Using named volume for performance and safety
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ${YOUR_NETWORK_1}
+      - ${YOUR_NETWORK_2}
+    # Performance tuning for multiple services (IKE Standard)
+    command: >
+      postgres
+      -c max_connections=300
+      -c shared_buffers=1GB
+      -c work_mem=32MB
+      -c maintenance_work_mem=256MB
+      -c effective_cache_size=3GB
+    # Official postgres healthcheck cmd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+
+  mariadb-hub:
+    image: mariadb:11
+    container_name: mariadb-hub
+    hostname: mariadb-hub
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASS}
+      TZ: ${TZ}
+    volumes:
+      # Using named volume for performance and safety
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - ${YOUR_NETWORK_1}
+      - ${YOUR_NETWORK_2}
+    # Required transaction isolation for services like NPM/Nextcloud
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    healthcheck:
+      # Official MariaDB healthcheck script
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+
+  redis-hub:
+    image: redis:7-alpine
+    container_name: redis-hub
+    hostname: redis-hub
+    restart: unless-stopped
+    volumes:
+      # Using named volume for performance and safety
+      - redis_data:/data
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    environment:
+      TZ: ${TZ}
+    networks:
+      - ${YOUR_NETWORK_1}
+      - ${YOUR_NETWORK_2}
+    command: redis-server --appendonly yes
+    # Basic ping healthcheck 
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 60s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    hostname: pgadmin-hub
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${ADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${ADMIN_PASS}
+    volumes:
+      # Using named volume for performance and safety
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - ${YOUR_NETWORK_1}
+      - ${YOUR_NETWORK_2}
+    healthcheck:
+      # Checks if the web interface is responding
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80/misc/ping"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      postgres-hub:
+        condition: service_healthy
+
+networks:
+  ${YOUR_NETWORK_1}:
+    external: true
+  ${YOUR_NETWORK_2}:
+    external: true
+
+# Named volumes for Docker automatic management, performance and safety.
+volumes:
+  postgres_data:
+  mariadb_data:
+  redis_data:
+  pgadmin_data:
