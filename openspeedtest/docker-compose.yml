@@ -1,0 +1,28 @@
+###########################################################################
+# AUTHOR:  aemcomtech.au
+# VERSION: 1.2026.02.10.170845
+# WEBSITE: aemcomtech.au
+# PURPOSE: Secure a Docker-centric homelab repository by excluding sensitive 
+#          environment variables, local database binaries, and platform-specific 
+#          build artifacts.
+###########################################################################
+# Service: OpenSpeedTest
+# Role: Network Performance & Diagnostics
+# Security Level: Authenticated
+# Standard: ISO/IEC 27001 (InfoSec)
+###########################################################################
+
+services:
+  speedtest:
+    image: openspeedtest/latest
+    container_name: openspeedtest
+    restart: unless-stopped
+    environment:
+      - PORT_3001=3000
+      - TZ=Australia/Melbourne  
+    networks:
+      - YOUR_NETWORK
+
+networks:
+  YOUR_NETWORK:
+    external: true

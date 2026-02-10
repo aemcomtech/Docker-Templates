@@ -35,8 +35,8 @@ services:
       retries: 10
       start_period: 20s
     networks:
-      - caddy_plex_default
+      - YOUR_NETWORK
 
 networks:
-  caddy_plex_default:
+  YOUR_NETWORK:
     external: true

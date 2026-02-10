@@ -1,0 +1,199 @@
+# ==============================================================================
+# AUTHOR:  aemcomtech.au
+# VERSION: 1.2026.02.10.173600
+# WEBSITE: aemcomtech.au
+# PURPOSE: Arr-Stack Deployment via Gluetun VPN Sidecar
+# ==============================================================================
+
+services:
+# --- VPN GATEWAY (The Anchor) ---
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    hostname: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    ports:
+      - "8388:8388/tcp"   # Shadowsocks
+      - "11646:11646"     # slskd Listening Port
+      - "8090:8090"       # qBittorrent WebUI
+      - "9117:9117"       # Jackett
+      - "8989:8989"       # Sonarr
+      - "7878:7878"       # Radarr
+      - "8686:8686"       # Lidarr
+      - "5055:5055"       # Jellyseerr
+      - "8191:8191"       # FlareSolverr
+    environment:
+      - DNS_TRANSPORT=udp
+      - DNS_ADDRESS=1.1.1.1
+      - DNS_KEEP_NAMESERVER=on
+      - VPN_SERVICE_PROVIDER=airvpn
+      - VPN_TYPE=wireguard
+      - WIREGUARD_MTU=1400
+      - FIREWALL_OUTBOUND_SUBNETS=${FIREWALL_OUTBOUND_SUBNETS}
+      - HEALTH_TARGET_ADDRESSES=${HEALTH_TARGET_ADDRESSES}
+      - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+      - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
+      - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+      - SERVER_COUNTRIES=${SERVER_COUNTRIES}
+      - FIREWALL_VPN_INPUT_PORTS=11646,22555
+      - HTTPPROXY=on
+      - SHADOWSOCKS=on
+      - TZ=${TZ}
+      - 'HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE={"auth": "none"}'
+      - HTTP_CONTROL_SERVER_ADDRESS=:8000
+    networks:
+      - YOUR_NETWORK_1
+      - YOUR_NETWORK_2
+    restart: always
+
+# --- HELPERS ---
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    network_mode: "service:gluetun"
+    environment:
+      - TZ=${TZ}
+    restart: unless-stopped
+
+# --- TORRENT DOWNLOADER ---
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8090
+    volumes:
+      - ${CONFIG_ROOT}/qbittorrent:/config
+      - ${DOWNLOADS_PATH}:/downloads
+    restart: unless-stopped
+
+# --- MUSIC DOWNLOADER (Soulseek) ---
+  slskd:
+    image: slskd/slskd:latest
+    container_name: slskd
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - SLSKD_SLSK_LISTEN_PORT=22555
+      - SLSKD_REMOTE_CONFIGURATION=true
+    volumes:
+      - ${CONFIG_ROOT}/slskd:/app/config
+      - ${MUSIC_PATH}:/music
+      - ${DOWNLOADS_PATH}:/app/downloads
+    restart: unless-stopped
+
+  jackett:
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    network_mode: "service:gluetun"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/jackett:/config
+    restart: unless-stopped
+    depends_on:
+      - flaresolverr
+
+# --- MEDIA MANAGEMENT ---
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    network_mode: "service:gluetun"
+    environment:
+      - POSTGRES_HOST=postgres-hub
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_SUPER_PASS}
+      - POSTGRES_MAIN_DB=sonarr_main
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/sonarr:/config
+      - ${TV_PATH}:/tv
+      - ${DOWNLOADS_PATH}:/downloads
+    restart: unless-stopped
+    depends_on:
+      - jackett
+      - qbittorrent
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    network_mode: "service:gluetun"
+    environment:
+      - POSTGRES_HOST=postgres-hub
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_SUPER_PASS}
+      - POSTGRES_MAIN_DB=radarr_main
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/radarr:/config
+      - ${MOVIES_PATH}:/movies
+      - ${DOWNLOADS_PATH}:/downloads
+    restart: unless-stopped
+    depends_on:
+      - jackett
+      - qbittorrent
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    network_mode: "service:gluetun"
+    environment:
+      - POSTGRES_HOST=postgres-hub
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_SUPER_PASS}
+      - POSTGRES_MAIN_DB=lidarr_main
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/lidarr:/config
+      - ${MUSIC_PATH}:/Audio
+      - ${DOWNLOADS_PATH}:/downloads
+    restart: unless-stopped
+    depends_on:
+      - slskd
+      - qbittorrent
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    network_mode: "service:gluetun"
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=postgres-hub
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASS=${POSTGRES_SUPER_PASS}
+      - DB_NAME=jellyseerr_main
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_ROOT}/jellyseerr:/app/config
+    restart: unless-stopped
+    depends_on:
+      - sonarr
+      - radarr
+
+networks:
+  YOUR_NETWORK_1:
+    external: true
+  YOUR_NETWORK_2:
+    external: true

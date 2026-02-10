@@ -1,0 +1,75 @@
+# ==============================================================================
+# AUTHOR:  aemcomtech.au
+# VERSION: 1.2026.02.10.173345
+# WEBSITE: aemcomtech.au
+# PURPOSE: Optimize Docker build performance and security by excluding 
+#          unnecessary files, secrets, and local development artifacts.
+# ==============================================================================
+
+# 🎩 MadHatter Summary:
+# ---------------------
+# - The Sentry (White Hat): Ensures sensitive .env files stay on the host, 
+#   preventing secrets from being baked into the image layers.
+# - The Ghost (Green Hat): Strips away local Git history and IDE metadata, 
+#   making the final container image as light as possible.
+# - The Professor (Blue Hat): A lesson in "Build Context" optimization—only 
+#   send the code actually needed to run the service.
+# - The Janitor (Red Hat): Sweeps up Windows "garbage" like Thumbs.db and 
+#   temp files that cause clutter in Linux-based containers.
+
+# ==============================================================================
+# Secrets & Environment (CRITICAL)
+# ==============================================================================
+# Prevent embedding secrets in the image layers. 
+# Compose will still inject these at runtime via `env_file`.
+.env
+.env.*
+*.env
+.old
+secrets/
+certs/
+*.pem
+*.key
+
+# ==============================================================================
+# Version Control & IDEs
+# ==============================================================================
+.git
+.gitignore
+.gitattributes
+.dockerignore
+.vscode/
+.vs/
+*.code-workspace
+.idea/
+*.suo
+*.user
+
+# ==============================================================================
+# Local Data & Volumes
+# ==============================================================================
+# Exclude folders where containers store their persistent data
+**/data/
+**/db_data/
+**/postgres_data/
+**/redis_data/
+**/logs/
+**/npm/
+**/pihole/
+
+# ==============================================================================
+# Build Artifacts & Dependencies
+# ==============================================================================
+node_modules/
+npm-debug.log
+obj/
+bin/
+dist/
+*.log
+
+# ==============================================================================
+# OS Specific (Windows Junk)
+# ==============================================================================
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
