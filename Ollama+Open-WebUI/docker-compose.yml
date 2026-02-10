@@ -1,54 +1,92 @@
 services:
-  # --- Backend Daemon (Proxies RDP/SSH/VNC) ---
-  guacd:
-    image: guacamole/guacd
-    container_name: guacd
-    hostname: guacd
-    restart: unless-stopped
-    networks:
-      - ${YOUR_NETWORK_1}
-      - ${YOUR_NETWORK_2}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "4822"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
-
-  # --- Frontend WebApp (Tomcat) ---
-  guacamole:
-    image: guacamole/guacamole
-    container_name: guacamole
-    hostname: guacamole
+  # --- Backend: Inference Engine ---
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    hostname: ollama-server
     restart: unless-stopped
     environment:
-      - GUACD_HOSTNAME=guacd
-      - POSTGRESQL_HOSTNAME=${POSTGRES_HOSTNAME}
-      - POSTGRESQL_PORT=5432
-      - POSTGRESQL_DATABASE=${POSTGRES_DB}
-      - POSTGRESQL_USERNAME=${POSTGRES_USER}
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASS}
-      - WEBAPP_CONTEXT=${WEBAPP_CONTEXT}
-      - LOG_LEVEL=${LOG_LEVEL}
+      - TZ=${TZ}
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
+      - NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES}
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    networks:
+      ${YOUR_NETWORK_2}:
+        aliases:
+          - ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    # Hardware Acceleration (NVIDIA)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # --- Frontend: Chat Interface ---
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:cuda
+    container_name: open-webui
+    hostname: openwebui-server
+    restart: unless-stopped
+    environment:
+      - TZ=${TZ}
+      - WEBUI_URL=${WEBUI_URL}
+      # Internal connection to Ollama
+      - OLLAMA_BASE_URL=http://ollama:11434
+      # Auth
+      - ENABLE_OAUTH_SIGNUP=false
+      - OAUTH_PROVIDER_NAME=Authentik
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}
+      - OPENID_PROVIDER_URL=${OPENID_PROVIDER_URL}
+      - OPENID_REDIRECT_URI=${OPENID_REDIRECT_URI}
+      # MCP / Features
+      - MCP_ENABLE=true
+      - MCP_CONFIG_FILE=/app/backend/data/mcp.json
+      - USE_CUDA_DOCKER=true
     networks:
       ${YOUR_NETWORK_1}:
         aliases:
-          - guacamole_web
+          - openwebui_web
       ${YOUR_NETWORK_2}:
+    volumes:
+      - open_webui_data:/app/backend/data
+      - ./logs:/var/log
+      # Docker Socket (Optional: Only if you need WebUI to manage containers)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./ssh_keys:/app/ssh_keys
+      - ./mcp.json:/app/backend/data/mcp.json
+      - audio_volume:/audio
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 60s
       timeout: 10s
-      retries: 5
-      start_period: 90s # Give Tomcat extra time to start up
+      retries: 3
+      start_period: 90s
     depends_on:
-      guacd:
-        condition: service_started
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
+      ollama:
+        condition: service_healthy
+
+volumes:
+  ollama_data:
+  open_webui_data:
+  audio_volume:
 
 networks:
   ${YOUR_NETWORK_1}:

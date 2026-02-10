@@ -1,57 +1,172 @@
 services:
-  # --- Backend Daemon (Proxies RDP/SSH/VNC) ---
-  guacd:
-    image: guacamole/guacd
-    container_name: guacd
-    hostname: guacd
-    restart: unless-stopped
-    networks:
-      - ${YOUR_NETWORK_1}
-      - ${YOUR_NETWORK_2}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "4822"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
-
-  # --- Frontend WebApp (Tomcat) ---
-  guacamole:
-    image: guacamole/guacamole
-    container_name: guacamole
-    hostname: guacamole
+  # --- 1. Main Editor (The Brain) ---
+  aem-n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    hostname: n8n
     restart: unless-stopped
     environment:
-      - GUACD_HOSTNAME=guacd
-      - POSTGRESQL_HOSTNAME=${POSTGRES_HOSTNAME}
-      - POSTGRESQL_PORT=5432
-      - POSTGRESQL_DATABASE=${POSTGRES_DB}
-      - POSTGRESQL_USERNAME=${POSTGRES_USER}
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASS}
-      - WEBAPP_CONTEXT=${WEBAPP_CONTEXT}
-      - LOG_LEVEL=${LOG_LEVEL}
-    networks:
-      ${YOUR_NETWORK_1}:
-        aliases:
-          - guacamole_web
-      ${YOUR_NETWORK_2}:
+      - N8N_HOST=${N8N_SUBDOMAIN}.${DOMAIN}
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://${N8N_SUBDOMAIN}.${DOMAIN}
+      - TZ=${TZ}
+      # Security
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      # Queue Mode Configuration
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=${QUEUE_BULL_REDIS_HOST}
+      - QUEUE_BULL_REDIS_PORT=${QUEUE_BULL_REDIS_PORT}
+      - QUEUE_BULL_REDIS_DB=${QUEUE_BULL_REDIS_DB}
+      # Database Configuration
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=${DB_POSTGRESDB_HOST}
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      # AI & Tools
+      - N8N_AI_ASSISTANT_BASE_URL=https://ai-assistant.n8n.io
+      - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+    volumes:
+      - n8n-data:/home/node/.n8n
+      # Optional: Map local projects folder
+      # - ./projects:/home/node/projects
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 256M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:5678/healthz"]
       interval: 60s
       timeout: 10s
-      retries: 5
-      start_period: 90s # Give Tomcat extra time to start up
-    depends_on:
-      guacd:
-        condition: service_started
+      retries: 10
+      start_period: 20s
+    networks:
+      ${YOUR_NETWORK_1}:
+
+  # --- 2. Worker Node (The Muscle) ---
+  n8n-worker:
+    image: n8nio/n8n:latest
+    container_name: n8n-worker
+    hostname: n8n-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      - TZ=${TZ}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      # Worker Mode Config
+      - EXECUTIONS_MODE=queue
+      - EXECUTIONS_PROCESS=main
+      - QUEUE_BULL_REDIS_HOST=${QUEUE_BULL_REDIS_HOST}
+      - QUEUE_BULL_REDIS_PORT=${QUEUE_BULL_REDIS_PORT}
+      - QUEUE_BULL_REDIS_DB=${QUEUE_BULL_REDIS_DB}
+      # Database Config (Must match Main)
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=${DB_POSTGRESDB_HOST}
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
+      - n8n-data:/home/node/.n8n
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:5678/healthz"]
+      interval: 60s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    depends_on:
+      - aem-n8n
+    networks:
+      ${YOUR_NETWORK_2}:
+
+  # --- 3. Python Task Runners (The Linguist) ---
+  n8ntask-runners:
+    image: n8nio/runners:latest
+    container_name: n8n-task-runners
+    hostname: n8n-task-runners
+    restart: unless-stopped
+    environment:
+      - N8N_RUNNERS_MODE=external
+      - N8N_RUNNERS_AUTH_TOKEN=${N8N_RUNNERS_AUTH_TOKEN}
+      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n:5679
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 256M
+    depends_on:
+      - aem-n8n
+    networks:
+      ${YOUR_NETWORK_2}:
+
+  # --- 4. MCP Gateway (The Bridge) ---
+  mcp-gateway:
+    image: docker/mcp-gateway
+    container_name: mcp-gateway
+    hostname: mcp-gateway
+    restart: unless-stopped
+    command: 
+      - "--port=8811"
+      - "--transport=sse"
+      - "--servers=context7"
+      - "--servers=youtube-transcripts"
+      - "--servers=playwright"
+      - "--servers=ffmpeg"
+      - "--servers=docker"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./mcp:/mcp
+    ports:
+      - "8811:8811"
+    networks:
+      ${YOUR_NETWORK_2}:
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 64M
+
+  # --- 5. Docker Watcher (The Sentry) ---
+  docker-watcher:
+    image: docker:cli
+    container_name: n8n-docker-watcher
+    hostname: n8n-docker-watcher
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["/bin/sh", "-c"]
+    # Watches for 'start' events and POSTs to n8n webhook
+    command: >
+      "apk add --no-cache curl;
+      docker events --filter 'event=start' --format '{{json .}}' | while read event; do
+        curl -X POST -H 'Content-Type: application/json' -d \"$$event\" https://${N8N_SUBDOMAIN}.${DOMAIN}/webhook/docker-logs;
+      done"
+    networks:
+      ${YOUR_NETWORK_1}:
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 256M
 
 networks:
   ${YOUR_NETWORK_1}:
     external: true
   ${YOUR_NETWORK_2}:
     external: true
+
+volumes:
+  n8n-data:

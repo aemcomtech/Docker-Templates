@@ -1,57 +1,61 @@
 services:
-  # --- Backend Daemon (Proxies RDP/SSH/VNC) ---
-  guacd:
-    image: guacamole/guacd
-    container_name: guacd
-    hostname: guacd
-    restart: unless-stopped
-    networks:
-      - ${YOUR_NETWORK_1}
-      - ${YOUR_NETWORK_2}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "4822"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
-
-  # --- Frontend WebApp (Tomcat) ---
-  guacamole:
-    image: guacamole/guacamole
-    container_name: guacamole
-    hostname: guacamole
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    hostname: jellyfin
     restart: unless-stopped
     environment:
-      - GUACD_HOSTNAME=guacd
-      - POSTGRESQL_HOSTNAME=${POSTGRES_HOSTNAME}
-      - POSTGRESQL_PORT=5432
-      - POSTGRESQL_DATABASE=${POSTGRES_DB}
-      - POSTGRESQL_USERNAME=${POSTGRES_USER}
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASS}
-      - WEBAPP_CONTEXT=${WEBAPP_CONTEXT}
-      - LOG_LEVEL=${LOG_LEVEL}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
     networks:
       ${YOUR_NETWORK_1}:
-        aliases:
-          - guacamole_web
       ${YOUR_NETWORK_2}:
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
-      start_period: 90s # Give Tomcat extra time to start up
-    depends_on:
-      guacd:
-        condition: service_started
+    
+    # --- Ports ---
+    ports:
+      - "${JELLYFIN_PORT}:8096"   # Web UI
+      - "7359:7359/udp"           # Service discovery
+      - "1900:1900/udp"           # DLNA announcements
+
+    # --- Volumes ---
     volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
+      # Config & Cache
+      - ${JELLYFIN_CONFIG_DIR}:/config
+      - ${JELLYFIN_CACHE_DIR}:/cache
+      - ${JELLYFIN_TRANSCODE_DIR}:/transcode
+      
+      # Media Libraries
+      - ${MEDIA_MOVIES_DIR}:/media/movies
+      - ${MEDIA_TV_DIR}:/media/tv
+      - ${MEDIA_MUSIC_DIR}:/media/music
+      - ${MEDIA_BOOKS_DIR}:/media/books
+
+    # --- Hardware Acceleration ---
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 1G
+          devices:
+            - driver: nvidia
+              # Maps to the specific GPU ID defined in .env
+              device_ids: ['${NVIDIA_DEVICE_ID}']
+              capabilities: [gpu, utility, compute, video]
+
+    # --- Healthcheck ---
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
   ${YOUR_NETWORK_1}:
+    name: ${YOUR_NETWORK_1}
     external: true
   ${YOUR_NETWORK_2}:
+    name: ${YOUR_NETWORK_2}
     external: true
