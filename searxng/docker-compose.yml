@@ -1,54 +1,39 @@
 services:
-  # --- Backend Daemon (Proxies RDP/SSH/VNC) ---
-  guacd:
-    image: guacamole/guacd
-    container_name: guacd
-    hostname: guacd
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    hostname: searxng
     restart: unless-stopped
     networks:
       - ${YOUR_NETWORK_1}
       - ${YOUR_NETWORK_2}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "4822"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
+    ports:
+      - "${SEARXNG_PORT}:8080"
     volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
-
-  # --- Frontend WebApp (Tomcat) ---
-  guacamole:
-    image: guacamole/guacamole
-    container_name: guacamole
-    hostname: guacamole
-    restart: unless-stopped
+      - ./settings.yml:/etc/searxng/settings.yml:rw
     environment:
-      - GUACD_HOSTNAME=guacd
-      - POSTGRESQL_HOSTNAME=${POSTGRES_HOSTNAME}
-      - POSTGRESQL_PORT=5432
-      - POSTGRESQL_DATABASE=${POSTGRES_DB}
-      - POSTGRESQL_USERNAME=${POSTGRES_USER}
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASS}
-      - WEBAPP_CONTEXT=${WEBAPP_CONTEXT}
-      - LOG_LEVEL=${LOG_LEVEL}
-    networks:
-      ${YOUR_NETWORK_1}:
-        aliases:
-          - guacamole_web
-      ${YOUR_NETWORK_2}:
+      - SEARXNG_BASE_URL=${SEARXNG_BASE_URL}
+      - SEARXNG_VALKEY_URL=${SEARXNG_VALKEY_URL}
+      - SEARXNG_SECRET=${SEARXNG_SECRET}
+      - TZ=${TZ}
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 64M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 60s
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://searxng:8080/healthz || exit 1"]
+      interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 90s # Give Tomcat extra time to start up
-    depends_on:
-      guacd:
-        condition: service_started
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "15m"
+        max-file: "7"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
 networks:
   ${YOUR_NETWORK_1}:

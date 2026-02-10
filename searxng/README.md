@@ -1,36 +1,38 @@
-# 🖥️ Guacamole: The Remote Gateway
+# 🔍 SearXNG: The Private Eye
 
 **AUTHOR:** aemcomtech.au  
-**VERSION:** 1.2026.02.10.195500  
+**VERSION:** 1.2026.02.10.223000  
 **WEBSITE:** [aemcomtech.au](https://aemcomtech.au)  
-**PURPOSE:** A clientless remote desktop gateway. It translates RDP, VNC, and SSH protocols into HTML5, allowing access to internal systems via a standard web browser.
+**PURPOSE:** A privacy-respecting, hackable metasearch engine. It aggregates results from Google, Bing, DuckDuckGo, and Wikipedia without tracking you.
 
 ---
 
 ### 🎩 MadHatter Summary
-* **The Architect (White Hat):** Universal access without universal exposure. We do not open RDP ports (3389) or SSH ports (22) to the WAN. Instead, we tunnel everything through a single, secured HTTPS session.
-* **The Ghost (Green Hat):** Zero footprint. There are no plugins or clients to install. You can manage your "IKE" server or check your "Arr Stack" from a library computer, a tablet, or a restricted corporate laptop.
-* **The Librarian (Blue Hat):** Audit trails. Guacamole creates a centralized log of who accessed which machine and when. It supports session recording for compliance and troubleshooting.
-* **The Engineer (Red Hat):** Protocol Translation. The `guacd` daemon handles the heavy lifting of protocol negotiation, while the Tomcat frontend simply serves the pixels. This split architecture ensures stability and performance.
+* **The Architect (White Hat):** Search Sovereignty. Instead of relying on a single provider that bubbles your results based on your history, SearXNG queries multiple engines simultaneously. It strips the tracking pixels and presents a clean, unbiased list of results.
+* **The Ghost (Green Hat):** The Proxy. SearXNG acts as a man-in-the-middle. When you search for "Linux ISOs," Google sees a request coming from your "IKE" server's IP, not your personal laptop or phone. Your browser fingerprint is never leaked to the big data giants.
+* **The Librarian (Blue Hat):** Aggregation. This stack is heavily customized to search specific domains. It includes custom "shortcuts" for IT documentation (Docker Hub, ArchWiki, LinuxServer.io) and job hunting (Seek, LinkedIn), creating a unified research dashboard.
+* **The Engineer (Red Hat):** Redis Caching. This stack connects to the central `redis-hub` (Database 2). This caches frequent queries to reduce outbound traffic and speed up repeated searches, keeping the "IKE" server responsive.
 
 ---
 
 ### 🌐 Network Topology
-This stack operates in two parts:
-
-* **Guacd (The Proxy):** Sits on the internal network, reaching out to your actual servers (Windows VMs, Linux Hosts) via RDP/SSH.
-* **Guacamole (The Frontend):** Sits on the Proxy network, serving the UI to you via your browser. It talks to `postgres-hub` for user data and `guacd` for the actual connection.
+* **Frontend:** Sits on `${YOUR_NETWORK_1}` (Web) to be accessible via `scope.domain.com`.
+* **Backend:** Sits on `${YOUR_NETWORK_2}` (Internal) to connect to `redis-hub` for caching.
 
 ---
 
 ### 👨‍💻 Behind the Lab
-I am a **Business Analyst** and **Project Manager** (BABOK/PMBOK certified). This stack represents the transition from corporate system optimization to personal **Digital Sovereignty**. I treat my home lab ("IKE") with the same rigor as an enterprise environment, ensuring high availability, security, and documentation.
+I am a **Business Analyst** and **Project Manager** (BABOK/PMBOK certified). This stack represents the transition from corporate system optimization to personal **Digital Sovereignty**. I treat my home lab ("IKE") with the same rigor as an enterprise environment.
 
 ---
 
 ### 🚀 Implementation Notes
-1. **Database Initialization (CRITICAL):**
-   Guacamole does *not* auto-create its database schema. You must generate the SQL and run it against `postgres-hub` manually before the container will start:
-   ```bash
-   docker run --rm guacamole/guacamole /opt/guacamole/bin/initdb.sh --postgres > initdb.sql
-   # Then import initdb.sql into your 'guacamole_main' database.
+1.  **Secret Key:**
+    You must generate a strong secret key for `SEARXNG_SECRET`.
+    ```bash
+    openssl rand -hex 32
+    ```
+2.  **Redis Database:**
+    This stack is configured to use **Database 2** on your `redis-hub` (`redis://redis-hub:6379/2`) to avoid conflicts with n8n (which uses DB 1) or other services.
+3.  **Settings File:**
+    The container mounts a `./settings.yml`. This file contains the "AEMComTech" custom engine definitions. Ensure this file is present before starting the container.

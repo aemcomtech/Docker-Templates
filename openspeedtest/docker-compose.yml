@@ -17,12 +17,37 @@ services:
     image: openspeedtest/latest
     container_name: openspeedtest
     restart: unless-stopped
+    hostname: openspeedtest
     environment:
-      - PORT_3001=3000
-      - TZ=Australia/Melbourne  
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
     networks:
-      - YOUR_NETWORK
+      ${YOUR_NETWORK_1}:
+        aliases:
+          - speedtest
+    
+    # --- Ports ---
+    ports:
+      - "${SPEEDTEST_PORT}:3000"
+
+    # --- Resources ---
+    # Performance is critical for accurate testing
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 128M
+
+    # --- Healthcheck ---
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--spider", "http://localhost:3000"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 networks:
-  YOUR_NETWORK:
+  ${YOUR_NETWORK_1}:
     external: true

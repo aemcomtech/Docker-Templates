@@ -1,40 +1,34 @@
-# OpenSpeedTest Docker Deployment
+# 🚀 OpenSpeedTest: The Network Gauge
 
-# ==============================================================================
-# AUTHOR:  aemcomtech.au
-# VERSION: 1.2026.02.10.170845
-# WEBSITE: aemcomtech.au
-# PURPOSE: Secure a Docker-centric homelab repository by excluding sensitive 
-#          environment variables, local database binaries, and platform-specific 
-#          build artifacts.
-# ==============================================================================
+**AUTHOR:** aemcomtech.au  
+**VERSION:** 1.2026.02.10.214500  
+**WEBSITE:** [aemcomtech.au](https://aemcomtech.au)  
+**PURPOSE:** A client-side, HTML5 network performance tool. It measures LAN and WAN bandwidth without requiring Flash, Java, or client-side apps.
 
-## 🎩 MadHatter Summary:
-* **The Sentry (White Hat):** Ensures that network performance data is kept within the private infrastructure, preventing external leakage of internal throughput metrics.
-* **The Optimizer (Green Hat):** Provides a lightweight, browser-based testing tool that doesn't require client-side software, keeping the environment lean.
-* **The Scholar (Blue Hat):** Implements localized performance benchmarking to separate ISP limitations from internal network bottlenecks.
-* **The Fixer (Red Hat):** Identifies packet loss and congestion within the Docker network before they impact critical public-facing services.
+---
 
-## 🚀 Features
-* **Zero Client Software:** Run speed tests from any device with a web browser.
-* **Network Transparency:** Benchmarks internal LAN/VLAN speeds independently of your ISP.
-* **Reverse Proxy Ready:** Pre-configured to join the `caddy_plex_default` network for secure remote access.
-* **ISO/IEC 27001 Alignment:** Designed with availability and performance monitoring principles in mind.
+### 🎩 MadHatter Summary
+* **The Architect (White Hat):** Truth in Bandwidth. Unlike public speed tests (Ookla) which measure your internet connection, OpenSpeedTest measures the speed *between* your device and the "IKE" server. This allows you to verify internal Wi-Fi performance and switch throughput.
+* **The Ghost (Green Hat):** Zero Footprint. No installation required on client devices. It runs entirely in the browser using HTML5, making it compatible with everything from Smart TVs to iPhones.
+* **The Librarian (Blue Hat):** Benchmarking. Use this to establish a baseline for your network. If streaming buffers or file transfers lag, OpenSpeedTest proves whether the bottleneck is your local network or the ISP.
+* **The Engineer (Red Hat):** Stress Testing. It generates real traffic loads to saturate the link, allowing you to test the thermal stability of your router or the throughput of a new Powerline adapter.
 
-## 🛠️ Deployment Details
-* **Container Name:** `openspeedtest`
-* **Internal Port:** `3000` (Mapped via environment variable to `3001` for external access).
-* **Timezone:** Set to `Australia/Melbourne` for accurate logging.
+---
 
-## 📂 Volume Configuration
-This service is intentionally stateless to maximize performance. No persistent volumes are required for standard operation, aligning with the **Optimizer** philosophy of keeping repositories bloated-free.
+### 🌐 Network Topology
+* **Frontend:** Sits on `${YOUR_NETWORK_1}` (Web). This allows you to test speeds over the Reverse Proxy (simulating external access) or directly via IP (for raw LAN speed).
+* **Backend Reach:** Does not require backend database access.
 
-## 🚦 Usage
-To deploy this network diagnostic tool:
+---
 
-1. Clone this repository.
-2. Ensure the external network is active on your host.
-3. Deploy using PowerShell:
+### 👨‍💻 Behind the Lab
+I am a **Business Analyst** and **Project Manager** (BABOK/PMBOK certified). This stack represents the transition from corporate system optimization to personal **Digital Sovereignty**. I treat my home lab ("IKE") with the same rigor as an enterprise environment.
 
-```powershell
-docker-compose up -d
+---
+
+### 🚀 Implementation Notes
+1.  **Testing Context:**
+    * **Direct IP (http://192.168.x.x:3000):** Tests raw LAN speed (Switch/Wi-Fi limit).
+    * **Domain (https://speed.domain.com):** Tests the Reverse Proxy overhead and SSL encryption speed.
+2.  **Resources:**
+    While lightweight, the container needs CPU to generate the random data for the test. If "IKE" is under heavy load (e.g., transcoding Plex), results may be artificially lower.
