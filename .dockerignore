@@ -3,7 +3,7 @@
 # VERSION: 1.2026.02.10.173345
 # WEBSITE: aemcomtech.au
 # PURPOSE: Optimize Docker build performance and security by excluding 
-#          unnecessary files, secrets, and local development artifacts.
+#          unnecessary files, secrets, and local development artifacts. 
 # ==============================================================================
 
 # 🎩 MadHatter Summary:
