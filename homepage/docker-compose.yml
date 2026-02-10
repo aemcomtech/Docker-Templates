@@ -1,0 +1,32 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    hostname: homepage
+    restart: unless-stopped
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    networks:
+      ${YOUR_NETWORK_1}:
+        aliases:
+          - homepage_web
+      ${YOUR_NETWORK_2}:
+    ports:
+      - "${HOMEPAGE_PORT}:3000"
+    volumes:
+      - ./config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 60s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+networks:
+  ${YOUR_NETWORK_1}:
+    external: true
+  ${YOUR_NETWORK_2}:
+    external: true
