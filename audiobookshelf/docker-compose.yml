@@ -17,17 +17,19 @@ services:
     image: ghcr.io/advplyr/audiobookshelf:latest
     container_name: audiobookshelf
     hostname: audiobookshelf
-    ports:
-      - "13378:80"
-    volumes:
-      # Map these to your local storage paths
-      - 'G:\Audiobookshelf:/audiobooks'
-      - 'G:\Audiobookshelf\podcasts:/podcasts'
-      - 'Q:\Docker Compose\audiobookshelf\config:/config'
-      - 'Q:\Docker Compose\audiobookshelf\metadata:/metadata'
-    environment:
-      - TZ=Australia/Melbourne
     restart: unless-stopped
+    ports:
+      - "${ABS_PORT}:80"
+    volumes:
+      # Media Libraries
+      - ${ABS_AUDIOBOOKS_DIR}:/audiobooks
+      - ${ABS_PODCASTS_DIR}:/podcasts
+      
+      # Configuration & Metadata
+      - ${ABS_CONFIG_DIR}:/config
+      - ${ABS_METADATA_DIR}:/metadata
+    environment:
+      - TZ=${TZ}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--spider", "http://127.0.0.1:80/healthcheck"]
       interval: 60s
@@ -35,8 +37,8 @@ services:
       retries: 10
       start_period: 20s
     networks:
-      - YOUR_NETWORK
+      ${YOUR_NETWORK_1}:
 
 networks:
-  YOUR_NETWORK:
+  ${YOUR_NETWORK_1}:
     external: true
