@@ -1,54 +1,49 @@
 services:
-  # --- Backend Daemon (Proxies RDP/SSH/VNC) ---
-  guacd:
-    image: guacamole/guacd
-    container_name: guacd
-    hostname: guacd
-    restart: unless-stopped
-    networks:
-      - ${YOUR_NETWORK_1}
-      - ${YOUR_NETWORK_2}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "4822"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
-
-  # --- Frontend WebApp (Tomcat) ---
-  guacamole:
-    image: guacamole/guacamole
-    container_name: guacamole
-    hostname: guacamole
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    hostname: uptime-kuma
     restart: unless-stopped
     environment:
-      - GUACD_HOSTNAME=guacd
-      - POSTGRESQL_HOSTNAME=${POSTGRES_HOSTNAME}
-      - POSTGRESQL_PORT=5432
-      - POSTGRESQL_DATABASE=${POSTGRES_DB}
-      - POSTGRESQL_USERNAME=${POSTGRES_USER}
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASS}
-      - WEBAPP_CONTEXT=${WEBAPP_CONTEXT}
-      - LOG_LEVEL=${LOG_LEVEL}
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
     networks:
       ${YOUR_NETWORK_1}:
-        aliases:
-          - guacamole_web
       ${YOUR_NETWORK_2}:
+    
+    # --- Ports ---
+    ports:
+      - "${KUMA_PORT}:3001"
+
+    # --- Volumes ---
+    volumes:
+      - uptime-kuma-data:/app/data
+      # Docker Socket for "Docker Container" monitor type
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    # --- Resources ---
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 128M
+
+    # --- Healthcheck ---
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
       interval: 60s
       timeout: 10s
-      retries: 5
-      start_period: 90s # Give Tomcat extra time to start up
-    depends_on:
-      guacd:
-        condition: service_started
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
+      retries: 3
+      start_period: 30s
+    
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+volumes:
+  uptime-kuma-data:
+    driver: local
 
 networks:
   ${YOUR_NETWORK_1}:

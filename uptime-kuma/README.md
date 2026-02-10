@@ -1,36 +1,35 @@
-# 🖥️ Guacamole: The Remote Gateway
+# 💓 Uptime Kuma: The Pulse
 
 **AUTHOR:** aemcomtech.au  
-**VERSION:** 1.2026.02.10.195500  
+**VERSION:** 1.2026.02.10.230000  
 **WEBSITE:** [aemcomtech.au](https://aemcomtech.au)  
-**PURPOSE:** A clientless remote desktop gateway. It translates RDP, VNC, and SSH protocols into HTML5, allowing access to internal systems via a standard web browser.
+**PURPOSE:** A fancy, self-hosted monitoring tool. It tracks the status of your services (HTTP, TCP, Docker) and creates beautiful status pages.
 
 ---
 
 ### 🎩 MadHatter Summary
-* **The Architect (White Hat):** Universal access without universal exposure. We do not open RDP ports (3389) or SSH ports (22) to the WAN. Instead, we tunnel everything through a single, secured HTTPS session.
-* **The Ghost (Green Hat):** Zero footprint. There are no plugins or clients to install. You can manage your "IKE" server or check your "Arr Stack" from a library computer, a tablet, or a restricted corporate laptop.
-* **The Librarian (Blue Hat):** Audit trails. Guacamole creates a centralized log of who accessed which machine and when. It supports session recording for compliance and troubleshooting.
-* **The Engineer (Red Hat):** Protocol Translation. The `guacd` daemon handles the heavy lifting of protocol negotiation, while the Tomcat frontend simply serves the pixels. This split architecture ensures stability and performance.
+* **The Architect (White Hat):** The Dashboard. Uptime Kuma provides the "Single Source of Truth" regarding the health of the "IKE" lab. It visualizes uptime percentages, response times, and incident history in a clean, modern UI.
+* **The Ghost (Green Hat):** Local & Private. Unlike external tools (like Pingdom or UptimeRobot) which require public IPs to work, Kuma sits inside your network. It can monitor internal IPs, local ports, and hidden containers that the outside world cannot see.
+* **The Librarian (Blue Hat):** Incident Logging. It keeps a persistent history of every outage. If a service goes down at 3 AM, Kuma records it and sends a notification (Discord, Telegram, Email), ensuring you are never in the dark about stability issues.
+* **The Engineer (Red Hat):** Docker Awareness. By mapping the `/var/run/docker.sock`, Kuma can monitor containers directly by name. If a container enters an "Unhealthy" state, Kuma knows instantly, even if the web server inside is still technically responding.
 
 ---
 
 ### 🌐 Network Topology
-This stack operates in two parts:
-
-* **Guacd (The Proxy):** Sits on the internal network, reaching out to your actual servers (Windows VMs, Linux Hosts) via RDP/SSH.
-* **Guacamole (The Frontend):** Sits on the Proxy network, serving the UI to you via your browser. It talks to `postgres-hub` for user data and `guacd` for the actual connection.
+* **Frontend:** Sits on `${YOUR_NETWORK_1}` (Web) to be accessible via Reverse Proxy (e.g., `status.domain.com`).
+* **Backend Reach:** Connected to `${YOUR_NETWORK_2}` (Internal) to ping databases (`postgres-hub`), caches (`redis-hub`), and other isolated services.
 
 ---
 
 ### 👨‍💻 Behind the Lab
-I am a **Business Analyst** and **Project Manager** (BABOK/PMBOK certified). This stack represents the transition from corporate system optimization to personal **Digital Sovereignty**. I treat my home lab ("IKE") with the same rigor as an enterprise environment, ensuring high availability, security, and documentation.
+I am a **Business Analyst** and **Project Manager** (BABOK/PMBOK certified). This stack represents the transition from corporate system optimization to personal **Digital Sovereignty**. I treat my home lab ("IKE") with the same rigor as an enterprise environment.
 
 ---
 
 ### 🚀 Implementation Notes
-1. **Database Initialization (CRITICAL):**
-   Guacamole does *not* auto-create its database schema. You must generate the SQL and run it against `postgres-hub` manually before the container will start:
-   ```bash
-   docker run --rm guacamole/guacamole /opt/guacamole/bin/initdb.sh --postgres > initdb.sql
-   # Then import initdb.sql into your 'guacamole_main' database.
+1.  **Docker Socket Security:**
+    This container mounts the Docker socket to monitor container statuses. While convenient, ensure this service is not exposed publicly without strong authentication (Authentik/Cloudflare Access) in front of it.
+2.  **Notification Triggers:**
+    You must configure notifications manually in the UI. It supports virtually every platform (Discord, Slack, Email, Pushover, etc.).
+3.  **Data Persistence:**
+    This stack uses a **Named Volume** (`uptime-kuma-data`) rather than a bind mount. This is often preferred for SQLite-heavy applications to prevent database locking issues on some file systems.

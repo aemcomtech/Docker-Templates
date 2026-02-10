@@ -1,57 +1,59 @@
 services:
-  # --- Backend Daemon (Proxies RDP/SSH/VNC) ---
-  guacd:
-    image: guacamole/guacd
-    container_name: guacd
-    hostname: guacd
-    restart: unless-stopped
-    networks:
-      - ${YOUR_NETWORK_1}
-      - ${YOUR_NETWORK_2}
-    healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "4822"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
-
-  # --- Frontend WebApp (Tomcat) ---
-  guacamole:
-    image: guacamole/guacamole
-    container_name: guacamole
-    hostname: guacamole
+  # --- Main Service ---
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
     restart: unless-stopped
     environment:
-      - GUACD_HOSTNAME=guacd
-      - POSTGRESQL_HOSTNAME=${POSTGRES_HOSTNAME}
-      - POSTGRESQL_PORT=5432
-      - POSTGRESQL_DATABASE=${POSTGRES_DB}
-      - POSTGRESQL_USERNAME=${POSTGRES_USER}
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASS}
-      - WEBAPP_CONTEXT=${WEBAPP_CONTEXT}
-      - LOG_LEVEL=${LOG_LEVEL}
+      - DOMAIN=${DOMAIN}
+      - SIGNUPS_ALLOWED=${SIGNUPS_ALLOWED}
+      - WEBSOCKET_ENABLED=true
+      # Logging
+      - LOG_FILE=/data/vaultwarden.log
+      - LOG_LEVEL=warn
+    volumes:
+      - vw-data:/data
+    ports:
+      - "${VW_HTTP_PORT}:80"
+      - "${VW_WEBSOCKET_PORT}:3012"
     networks:
       ${YOUR_NETWORK_1}:
-        aliases:
-          - guacamole_web
       ${YOUR_NETWORK_2}:
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 60s
       timeout: 10s
-      retries: 5
-      start_period: 90s # Give Tomcat extra time to start up
-    depends_on:
-      guacd:
-        condition: service_started
+      retries: 3
+      start_period: 20s
+
+  # --- Backup Sidecar ---
+  vw-backup:
+    image: ttionya/vaultwarden-backup:latest
+    container_name: vw-backup
+    restart: unless-stopped
+    environment:
+      - CRON=${BACKUP_CRON}
+      - ZIP_ENABLE=TRUE
+      - BACKUP_KEEP_DAYS=${BACKUP_RETENTION_DAYS}
+      - TIMEZONE=${TZ}
     volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
+      # Sources: Must match the main container's volume
+      - vw-data:/data
+      # Target: Local backup folder
+      - ./backups:/backups
+      # Optional: Config for Rclone if using cloud sync
+      - ./config:/config
+    networks:
+      ${YOUR_NETWORK_2}:
+    depends_on:
+      - vaultwarden
+
+volumes:
+  vw-data:
 
 networks:
   ${YOUR_NETWORK_1}:
     external: true
   ${YOUR_NETWORK_2}:
-    external: true
+    name: ${YOUR_NETWORK_2}
+    driver: bridge

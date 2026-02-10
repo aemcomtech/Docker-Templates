@@ -1,57 +1,80 @@
 services:
-  # --- Backend Daemon (Proxies RDP/SSH/VNC) ---
-  guacd:
-    image: guacamole/guacd
-    container_name: guacd
-    hostname: guacd
-    restart: unless-stopped
+  # --- Database Service ---
+  db:
+    image: mariadb:latest
+    container_name: wordpress_db
+    hostname: wordpress_db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - ${YOUR_NETWORK_2}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 60s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  # --- Application Service ---
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress_app
+    hostname: wordpress_app
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - WORDPRESS_DB_HOST=wordpress_db:3306
+      - WORDPRESS_DB_USER=${MYSQL_USER}
+      - WORDPRESS_DB_PASSWORD=${MYSQL_PASSWORD}
+      - WORDPRESS_DB_NAME=${MYSQL_DATABASE}
+      # Red Hat Config: Handle Reverse Proxy Headers (HTTPS Fix)
+      - WORDPRESS_CONFIG_EXTRA=
+          if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && strpos($$_SERVER['HTTP_X_FORWARDED_PROTO'], 'https') !== false) {
+              $$_SERVER['HTTPS'] = 'on';
+          }
+          if (isset($$_SERVER['HTTP_X_FORWARDED_HOST'])) {
+              $$_SERVER['HTTP_HOST'] = $$_SERVER['HTTP_X_FORWARDED_HOST'];
+          }
+          define('WP_HOME', '${WP_HOME}');
+          define('WP_SITEURL', '${WP_SITEURL}');
+    volumes:
+      - wordpress_data:/var/www/html
     networks:
       - ${YOUR_NETWORK_1}
       - ${YOUR_NETWORK_2}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
     healthcheck:
-      test: ["CMD", "nc", "-z", "127.0.0.1", "4822"]
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
       interval: 60s
       timeout: 10s
-      retries: 5
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
+      retries: 10
+      start_period: 30s
 
-  # --- Frontend WebApp (Tomcat) ---
-  guacamole:
-    image: guacamole/guacamole
-    container_name: guacamole
-    hostname: guacamole
-    restart: unless-stopped
-    environment:
-      - GUACD_HOSTNAME=guacd
-      - POSTGRESQL_HOSTNAME=${POSTGRES_HOSTNAME}
-      - POSTGRESQL_PORT=5432
-      - POSTGRESQL_DATABASE=${POSTGRES_DB}
-      - POSTGRESQL_USERNAME=${POSTGRES_USER}
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASS}
-      - WEBAPP_CONTEXT=${WEBAPP_CONTEXT}
-      - LOG_LEVEL=${LOG_LEVEL}
-    networks:
-      ${YOUR_NETWORK_1}:
-        aliases:
-          - guacamole_web
-      ${YOUR_NETWORK_2}:
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
-      interval: 60s
-      timeout: 10s
-      retries: 5
-      start_period: 90s # Give Tomcat extra time to start up
-    depends_on:
-      guacd:
-        condition: service_started
-    volumes:
-      # Mount local fonts for consistent rendering
-      - ./assets/fonts:/usr/share/fonts:ro
+volumes:
+  db_data:
+  wordpress_data:
 
 networks:
   ${YOUR_NETWORK_1}:
     external: true
   ${YOUR_NETWORK_2}:
-    external: true
+    name: ${YOUR_NETWORK_2}
+    driver: bridge
