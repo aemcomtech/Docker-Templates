@@ -1,0 +1,55 @@
+---
+# Version Control
+# Last date updated: 2026-02-10
+# Drafted by: AEMComTech
+
+title: Server Dashboard
+description: "Server Dashboard"
+theme: dark
+color: slate
+useEqualHeights: true
+headerStyle: clean
+hideVersion: true
+allowedHosts:
+  - localhost
+  - host.docker.internal
+
+# --- ASSETS ---
+favicon: https://i.imgur.com/BALXKMo.png
+
+background:
+  image: https://
+  blur: sm
+
+# --- WIDGET DEFAULTS ---
+status:
+  style: expanded
+tempUnit: C
+
+# --- LAYOUT CONFIGURATION ---
+# Note: 'Storage' now replaces 'IKE Performance' to match services.yaml
+layout:
+  Up and Coming:
+    style: row
+    columns: 1
+  Media Center:
+    style: row
+    columns: 3
+  AI & Automation:
+    style: row
+    columns: 3
+  Networking & Admin:
+    style: row
+    columns: 2
+  Find-arrs:
+    style: row
+    columns: 3
+  Tools:
+    style: row
+    columns: 3
+  Storage:
+    style: row
+    columns: 3
+  Live Logs:
+    style: row
+    columns: 1

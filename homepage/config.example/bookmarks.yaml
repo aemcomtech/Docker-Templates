@@ -1,0 +1,27 @@
+---
+# Version Control
+# Last date updated: 2026-01-22
+# Drafted by: AEMComTech
+
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/bookmarks
+
+- CHAT:
+    - Discord:
+        - icon: https://i.imgur.com/rmZeuI1.png
+          href: https://discord.com/channels/
+
+- MEDIA:
+    - YouTube:
+        - icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/youtube.svg
+          href: https://www.youtube.com/
+
+- Cloudflare:
+    - Domain Services:
+        - icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/cloudflare.svg
+          href: https://dash.cloudflare.com/
+
+- Speed Test:
+    - Cloudflare:
+        - icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/cloudflare.svg
+          href: https://speed.cloudflare.com/

@@ -1,0 +1,14 @@
+---
+# Version Control
+# Last date updated: 2026-01-22
+# Drafted by: AEMComTech
+
+# For configuration options and examples, please see:
+# https://gethomepage.dev/configs/docker/
+
+# Connect to the socket-proxy container defined in docker-compose
+# DevOps Best Practice: Accessing the socket via a proxy prevents
+# giving the main Homepage container full root access to the host.
+my-docker:
+  host: socket-proxy # Matches "container_name: socket-proxy" in docker-compose.yml
+  port: 2375         # Default port for technativa/socket-proxy (Internal Network Only)

@@ -1,0 +1,349 @@
+---
+# Version Control
+# Last date updated: 2026-01-22
+# Drafted by: AEMComTech
+
+# --- MONITORING SECTION ---
+- Storage:
+    - OS:
+        description: Storage
+        icon: https://img.icons8.com/ios-filled/50/03d0d8/c-drive.png
+        href: https://
+        widget:
+            type: glances
+            url: http://
+            version: 4
+            metric: 'fs:C:\'
+            chart: false
+    - Audiobooks:
+        description: Storage
+        icon: https://img.icons8.com/ios-filled/50/03d0d8/reading.png
+        widget:
+            type: glances
+            url: http://
+            version: 4
+            metric: 'fs:D:\'
+            chart: false
+    - Music & Audio:
+        description: Storage
+        icon: https://img.icons8.com/external-smashingstocks-glyph-smashing-stocks/66/03d0d8/external-dance-party-and-celebrations-smashingstocks-glyph-smashing-stocks.png
+        widget:
+            type: glances
+            url: http://
+            version: 4
+            metric: 'fs:D:\'
+            chart: false
+    - Movies:
+        description: Storage
+        icon: https://img.icons8.com/external-icongeek26-glyph-icongeek26/64/03d0d8/external-movie-cinema-icongeek26-glyph-icongeek26.png
+        widget:
+            type: glances
+            url: http://
+            version: 4
+            metric: 'fs:D:\'
+            chart: false
+    - TV:
+        description: Storage
+        icon: https://img.icons8.com/external-tal-revivo-bold-tal-revivo/24/03d0d8/external-smartphone-media-streaming-direct-to-tv-set-mobile-bold-tal-revivo.png
+        widget:
+            type: glances
+            url: http://
+            version: 4
+            metric: 'fs:D:\'
+            chart: false
+    - CPU:
+        description: Processor
+        widget:
+            type: glances
+            url: http://
+            version: 4
+            metric: cpu
+            chart: false
+    - Ram:
+        description: Memory
+        widget:
+            type: glances
+            url: http://
+            version: 4
+            metric: memory
+            chart: false
+    - Network:
+        description: Internet
+        widget:
+            type: glances
+            url: http://
+            version: 4
+            metric: network:Ethernet
+            chart: false
+    - GPU 0:
+        description: GPU
+        widget:
+            type: glances
+            url: http://
+            version: 4
+            metric: gpu:nvidia0
+            chart: false
+
+# --- CALENDAR SECTION ---
+- Up and Coming:
+    - When to Watch:
+        icon: https://img.icons8.com/comic/100/03d0d8/calendar.png
+        id: glass-card
+        name: Calendar
+        description: TV & Movie Releases
+        widget:
+          type: calendar
+          view: monthly
+          showTime: false
+          integrations:
+            - type: ical
+              url: 
+              name: TV Shows
+              color: zinc
+              params:
+                fetchInterval: 3600
+
+# --- MEDIA SECTION ---
+- Media Center:
+    - Netflix-ish:
+        id: glass-card
+        showStats: true
+        icon: https://img.icons8.com/external-tal-revivo-bold-tal-revivo/24/03d0d8/external-smartphone-media-streaming-direct-to-tv-set-mobile-bold-tal-revivo.png
+        href: https://
+        siteMonitor: http://jellyfin:8096
+        container: jellyfin
+        server: my-docker
+        description: Watch Movies and TV shows
+        widget:
+          type: jellyfin
+          url: http://jellyfin:8096
+          key: {{HOMEPAGE_VAR_JELLYFIN_API_KEY}}
+          enableBlocks: true
+          enableNowPlaying: true
+          enableUser: true
+          enableMediaControl: false
+          showEpisodeNumber: true
+          expandOneStreamToTwoRows: false
+
+    - See:
+        id: glass-card
+        showStats: true
+        icon: https://img.icons8.com/pastel-glyph/64/03d0d8/search-in-cloud--v2.png
+        href: https://
+        siteMonitor: http://gluetun:5055
+        container: jellyseerr
+        server: my-docker
+        description: Request New Media
+        widget:
+          type: jellyseerr
+          url: http://gluetun:5055
+          key: {{HOMEPAGE_VAR_JELLYSEERR_API_KEY}}
+
+    - Audibl-ish:
+        id: glass-card
+        showStats: true
+        icon: https://img.icons8.com/ios-filled/50/03d0d8/reading.png
+        href: https://
+        siteMonitor: http://audiobookshelf:80
+        container: audiobookshelf
+        server: my-docker
+        description: Audio Books
+        widget:
+          type: audiobookshelf
+          url: http://audiobookshelf:80
+          key: {{HOMEPAGE_VAR_ABS_API_KEY}}
+          books: true
+          booksDuration: true
+
+# --- AI & AUTOMATION SECTION ---
+- AI & Automation:
+    - n8n:
+        id: glass-card
+        showStats: true
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/n8n.svg
+        href: https://
+        siteMonitor: https://
+        description: Workflows
+        server: my-docker
+        container: n8n
+
+    - IKE-AI:
+        id: glass-card
+        showStats: true
+        icon: https://
+        href: https://
+        siteMonitor: https://
+        container: open-webui
+        description: Private IKE AI
+        server: my-docker
+
+    - Ollama:
+        id: glass-card
+        showStats: true
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/ollama-dark.svg
+        href: http://{{HOMEPAGE_VAR_HOST_IP}}:11434
+        siteMonitor: http://{{HOMEPAGE_VAR_HOST_IP}}:11434
+        container: ollama
+        description: LLM Server
+        server: my-docker
+
+# --- NETWORKING & ADMIN SECTION ---
+- Networking & Admin:
+    - Authentik:
+        id: glass-card
+        showStats: true
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/authentik.svg
+        href: https://
+        siteMonitor: https://
+        description: Authenticator
+        server: my-docker
+        container: authentik-server
+        widget:
+          type: authentik
+          url: http://auth-server:9000
+          key: {{HOMEPAGE_VAR_AUTHENTIK_API_KEY}}
+          version: 2
+
+    - Nginx Proxy Manager:
+        id: glass-card
+        description: Reverse Proxy
+        showStats: true
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/nginx-proxy-manager.svg
+        href: https://
+        siteMonitor: https://
+        server: my-docker
+        container: npm
+        widget:
+          type: npm
+          url: http://npm:81
+          username: {{HOMEPAGE_VAR_NPM_USERNAME}}
+          password: {{HOMEPAGE_VAR_NPM_PASSWORD}}
+
+    - Pi-hole:
+        id: glass-card
+        showStats: true
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/pi-hole.svg
+        href: https://
+        siteMonitor: https://
+        container: pihole
+        server: my-docker
+        description: Pi-hole DNS Server
+        widget:
+          type: pihole
+          version: 6
+          url: {{HOMEPAGE_VAR_PIHOLE_URL}}
+          key: {{HOMEPAGE_VAR_PIHOLE_API_TOKEN}}
+
+    - Gluetun:
+        id: glass-card
+        showStats: true
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/gluetun.svg
+        description: VPN Server
+        server: my-docker
+        container: gluetun
+        siteMonitor: http://gluetun:8000
+        widget:
+          type: gluetun
+          url: http://gluetun:8000
+          version: 2
+
+# --- FIND-ARRS SECTION ---
+- Find-arrs:
+    - TV Finder:
+        id: glass-card
+        showStats: true
+        description: Finds TV Shows
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/sonarr.svg
+        href: https://
+        siteMonitor: http://gluetun:8989
+        container: sonarr
+        server: my-docker
+        widget:
+          type: sonarr
+          url: http://gluetun:8989
+          key: {{HOMEPAGE_VAR_SONARR_API_KEY}}
+
+    - Movie Finder:
+        id: glass-card
+        showStats: true
+        description: Finds Movies
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/radarr.svg
+        href: https://
+        siteMonitor: http://gluetun:7878
+        container: radarr
+        server: my-docker
+        widget:
+          type: radarr
+          url: http://gluetun:7878
+          key: {{HOMEPAGE_VAR_RADARR_API_KEY}}
+
+    - Music Finder:
+        id: glass-card
+        showStats: true
+        description: Finds Music
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/lidarr.svg
+        href: https://
+        siteMonitor: http://gluetun:8686
+        container: lidarr
+        server: my-docker
+        widget:
+          type: lidarr
+          url: http://gluetun:8686
+          key: {{HOMEPAGE_VAR_LIDARR_API_KEY}}
+
+# --- TOOLS SECTION ---
+- Tools:
+    - Guacamole:
+        id: glass-card
+        showStats: true
+        description: Remote RDP
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/guacamole.svg
+        href: https://
+        siteMonitor: http://guacamole:8080
+        container: guacamole
+        server: my-docker
+
+    - qBittorrent:
+        id: glass-card
+        showStats: true
+        description: Torrent Client
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/qbittorrent.svg
+        href: https://
+        siteMonitor: http://gluetun:8090
+        container: qbittorrent
+        server: my-docker
+        widget:
+          type: qbittorrent
+          url: http://gluetun:8090
+          username: {{HOMEPAGE_VAR_QBIT_USERNAME}}
+          password: {{HOMEPAGE_VAR_QBIT_PASSWORD}}
+          enableLeechProgress: true
+          enableLeechSize: true
+
+    - Jackett:
+        id: glass-card
+        showStats: true
+        description: Torrent Indexer
+        icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/jackett.svg
+        href: https://
+        siteMonitor: http://gluetun:9117
+        container: jackett
+        server: my-docker
+
+# --- LOGS SECTION ---
+- Live Logs:
+    - Dozzle:
+        id: glass-card
+        server: my-docker
+        showStats: true
+        icon: dozzle.png
+        href: https://
+        description: Real-time Docker log viewer
+        container:
+        widget:
+          type: iframe
+          name: Dozzle Stream
+          src: https://
+          classes: w-full h-[1000px] border-2 border-[#0bcad9] rounded-xl bg-[#111b1d] dozzle-terminal
+          allowScrolling: false
+          loadingStrategy: eager

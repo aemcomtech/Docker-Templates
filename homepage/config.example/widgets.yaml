@@ -1,0 +1,65 @@
+---
+# Version Control
+# Last date updated: 2026-02-10
+# Drafted by: AEMComTech
+
+# ==============================================================================
+# WIDGETS CONFIGURATION
+# ==============================================================================
+
+- logo:
+    icon: https://i.imgur.com/BALXKMo.png
+
+- greeting:
+    text_size: xl
+    text: "My Homepage"
+
+- resources:
+    label: Docker
+    cpu: true
+    memory: true
+    cputemp: true      # Glances on Windows can usually read this!
+    uptime: true
+    disk: false
+
+- glances:
+    url: http://
+    version: 4
+    cpu: true
+    mem: true
+    cputemp: true
+    uptime: true
+    expanded: true
+    label: Server
+
+- datetime:
+    text_size: xl
+    locale: en-AU
+    format:
+      dateStyle: medium
+      timeStyle: medium
+      align: center
+
+- search:
+    provider: custom
+    label: "Private Search"
+    # Uses the global domain variable for portability
+    url: https://YOUR_SEARXNG_DOMAIN/search?q=
+    suggestionUrl: https://YOUR_SEARXNG_DOMAIN/autocompleter?q=
+
+# --- WEATHER LOCATIONS ---
+
+# Location 1: Primary (Thomastown) -> Linked to BOM
+- openweathermap:
+    label: Thomastown
+    latitude: -37.68014399683818
+    longitude: 145.0143190436113
+    units: metric
+    provider: openweathermap
+    apiKey: {{HOMEPAGE_VAR_OWM_API_KEY}}
+    cache: 60
+    format:
+      maximumFractionDigits: 1
+      align: center
+    # Click to open BOM 7-day forecast
+    href: https://www.bom.gov.au/location/australia/victoria/central/o2592347328-thomastown#7-days

@@ -1,0 +1,202 @@
+/* ==============================================================================
+   AUTHOR:  aemcomtech.au
+   VERSION: 1.2026.02.10.203000
+   PURPOSE: Master Stylesheet for Homepage.
+   NOTE:    Uses !important heavily to override native Tailwind classes.
+   ============================================================================== */
+
+/* --- 1. GLOBAL FONTS & BACKGROUND --- */
+@import url('https://fonts.googleapis.com/css2?family=Bitcount+Grid+Single:wght@300..500&display=swap');
+
+body {
+    background-color: #1a1b26 !important;
+    color: #e0e0e0 !important;
+    font-family: "Bitcount Grid Single", system-ui !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- 2. HEADER LAYOUT (The "Stack") --- */
+.header-wrap,
+div[class*="flex-row"] {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 15px !important;
+}
+
+/* Greeting / Logo Area */
+.information-widget-greeting span,
+div[class*="greeting"] span {
+    font-size: 3rem !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    width: 100% !important;
+    display: block !important;
+    text-shadow: 0 0 15px rgb(0, 0, 0) !important;
+}
+
+/* --- 3. WIDGET SPECIFICS --- */
+
+/* A. Resources (CPU / RAM / Uptime) */
+div:has(> .information-widget-resource) {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-evenly !important;
+    align-items: center !important;
+    margin-top: 15px !important;
+    margin-bottom: 15px !important;
+    gap: 20px !important;
+}
+
+.information-widget-resource {
+    flex-basis: auto !important;
+    width: auto !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* B. Date & Time */
+.information-widget-datetime {
+    flex-basis: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+    margin-bottom: 5px !important;
+    font-size: 1.5rem !important;
+}
+
+/* C. Search Bar (Responsive Fix) */
+div:has(> input[type="search"]),
+div:has(> input[placeholder="Search..."]) {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    margin: 15px 0 !important;
+}
+
+input[type="search"],
+input[placeholder="Search..."] {
+    text-align: center !important;
+    /* Mobile Responsive Widths */
+    width: 450px !important;      /* Target width for desktop */
+    max-width: 90vw !important;   /* Prevent overflow on mobile */
+    min-width: 0 !important;      /* Override default browser constraints */
+    background-color: rgba(30, 30, 46, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    font-family: "Bitcount Grid Single", system-ui !important;
+}
+
+/* D. Weather (Responsive Grid) */
+.information-widget-openweathermap {
+    display: flex !important;
+    flex-basis: auto !important;
+    flex-grow: 1 !important;
+    width: auto !important;
+    max-width: 25% !important; /* Desktop: 4 per row */
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 15px !important;
+    margin: 20px 10px !important;
+}
+
+/* Mobile Breakpoint */
+@media (max-width: 768px) {
+    .information-widget-openweathermap {
+        max-width: 48% !important; /* Mobile: 2 per row */
+        font-size: 0.9em !important;
+    }
+}
+
+/* --- 4. GROUP HEADINGS --- */
+h2.service-group-name,
+h2.bookmark-group-name,
+.layout-column h2,
+.grid h2 {
+    text-align: center !important;
+    width: 100% !important;
+    display: block !important;
+    margin-top: 35px !important;
+    margin-bottom: 15px !important;
+    font-size: 1.4rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 5px;
+}
+
+/* --- 5. SERVICE CARDS (Glassmorphism) --- */
+.ServiceCard,
+#glass-card {
+    background-color: rgba(30, 30, 46, 0.6) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+    color: #ffffff !important;
+}
+
+.ServiceCard:hover,
+#glass-card:hover {
+    background-color: rgba(40, 40, 60, 0.7) !important;
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* A. Force Numbers/Stats White */
+.ServiceCard .font-bold,
+.ServiceCard .text-sm,
+.ServiceCard .text-base,
+.ServiceCard .text-lg,
+.ServiceCard span:not(.text-xs), 
+.ServiceCard div:not(.text-xs) {
+    color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+/* B. Fade Labels */
+/* Targets small text like "CPU", "MEM" */
+.ServiceCard .text-xs,
+.ServiceCard .text-gray-400,
+.ServiceCard .text-theme-400,
+#glass-card .text-xs {
+    color: rgba(255, 255, 255, 0.45) !important;
+    font-weight: 500 !important;
+}
+
+/* C. Titles */
+.service-title-fix,
+#glass-card .truncate {
+    font-size: 1.1rem !important;
+    color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+/* --- 6. STATUS INDICATORS --- */
+/* Healthy (Green) */
+.ServiceCard [class*="text-green-"],
+.ServiceCard [class*="text-emerald-"] { color: #4ade80 !important; opacity: 1 !important; }
+
+/* Unhealthy (Red) */
+.ServiceCard [class*="text-red-"],
+.ServiceCard [class*="text-rose-"] { color: #f87171 !important; opacity: 1 !important; }
+
+/* Running (Yellow) */
+.ServiceCard [class*="text-blue-"],
+.ServiceCard [class*="text-cyan-"],
+.ServiceCard [class*="text-sky-"] { color: #facc15 !important; opacity: 1 !important; }
+
+/* Starting (Blue) */
+.ServiceCard [class*="text-yellow-"],
+.ServiceCard [class*="text-orange-"],
+.ServiceCard [class*="text-amber-"] { color: #3b82f6 !important; opacity: 1 !important; }
+
+/* --- 7. DOZZLE FIX --- */
+iframe.dozzle-terminal {
+    height: 400px !important;
+    min-height: 400px !important;
+}
