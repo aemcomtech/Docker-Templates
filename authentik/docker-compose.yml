@@ -5,7 +5,7 @@
 # PURPOSE: Authentik Stack with Postgres, Backups, and Proxy Outpost
 # ==============================================================================
 
-name: aem-authentik
+name: authentik
 
 services:
   # --- DATABASE ---
