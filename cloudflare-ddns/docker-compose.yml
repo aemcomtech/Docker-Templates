@@ -13,7 +13,7 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     networks:
-      - caddy_plex_default  # Standardized to your proxy network
+      - ${YOUR_NETWORK_1}
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pgrep -f 'node' || exit 1"]
@@ -30,6 +30,6 @@ services:
       - PROXIED=true  # Forces traffic through Cloudflare's proxy for security
 
 networks:
-  caddy_plex_default:
+  ${YOUR_NETWORK_1}:
     external: true
-    name: caddy_plex_default
+    name: ${YOUR_NETWORK_1}
