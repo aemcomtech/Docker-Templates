@@ -45,8 +45,8 @@ services:
       - 'HTTP_CONTROL_SERVER_AUTH_DEFAULT_ROLE={"auth": "none"}'
       - HTTP_CONTROL_SERVER_ADDRESS=:8000
     networks:
-      - YOUR_NETWORK_1
-      - YOUR_NETWORK_2
+      - ${YOUR_NETWORK_1}
+      - ${YOUR_NETWORK_2}
     restart: always
 
 # --- HELPERS ---
